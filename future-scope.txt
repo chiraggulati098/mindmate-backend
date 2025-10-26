@@ -1,0 +1,4 @@
+Login Functionality:
+- OTP flow for register
+- Login with OTP option
+

@@ -8,6 +8,13 @@ export enum DocumentType {
   PDF = 'pdf',
 }
 
+export enum ProcessingStatus {
+  NOT_PROCESSED = 'NOT_PROCESSED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+}
+
 @Schema({ timestamps: true })
 export class DocumentModel {
   @Prop({ required: true })
@@ -36,6 +43,26 @@ export class DocumentModel {
 
   @Prop({ type: Types.ObjectId, ref: 'Subject', required: true })
   subjectId: Types.ObjectId;
+
+  // Processing status fields
+  @Prop({ enum: ProcessingStatus, default: ProcessingStatus.NOT_PROCESSED })
+  summary_status: ProcessingStatus;
+
+  @Prop({ enum: ProcessingStatus, default: ProcessingStatus.NOT_PROCESSED })
+  flashcard_status: ProcessingStatus;
+
+  @Prop({ enum: ProcessingStatus, default: ProcessingStatus.NOT_PROCESSED })
+  mcq_status: ProcessingStatus;
+
+  // Content fields
+  @Prop({ default: '' })
+  summary: string;
+
+  @Prop({ default: '' })
+  flashcard: string;
+
+  @Prop({ default: '' })
+  mcq: string;
 }
 
 export const DocumentSchema = SchemaFactory.createForClass(DocumentModel);

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { DocumentModel, DocumentDocument, DocumentType } from './schemas/document.schema';
+import { DocumentModel, DocumentDocument, DocumentType, ProcessingStatus } from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { SubjectsService } from '../subjects/subjects.service';
@@ -142,13 +142,44 @@ export class DocumentsService {
   async processDocument(documentId: string, userId: string): Promise<DocumentModel> {
     const document = await this.findOne(documentId, userId);
 
+    // Determine queue type based on document type
+    let queueType: string;
+    switch (document.type) {
+      case DocumentType.PDF:
+        queueType = 'process-pdf';
+        break;
+      case DocumentType.TEXT:
+        queueType = 'process-text';
+        break;
+      default:
+        throw new Error(`Unsupported document type: ${document.type}`);
+    }
+
+    // Update all processing statuses to PROCESSING
+    const updatedDocument = await this.documentModel
+      .findOneAndUpdate(
+        { _id: documentId, userId: new Types.ObjectId(userId) },
+        {
+          summary_status: ProcessingStatus.PROCESSING,
+          flashcard_status: ProcessingStatus.PROCESSING,
+          mcq_status: ProcessingStatus.PROCESSING,
+        },
+        { new: true }
+      )
+      .populate('subjectId')
+      .exec();
+
+    if (!updatedDocument) {
+      throw new NotFoundException('Document not found');
+    }
+
     // use enqueue method from RedisService to send processing request
-    await this.redisService.enqueue('process-pdf', {
+    await this.redisService.enqueue(queueType, {
       documentId,
       userId,
     });
-    console.log(`Sent processing request to Redis Queue for document: ${documentId}; user ID: ${userId}`);
+    console.log(`Sent processing request to Redis Queue (${queueType}) for document: ${documentId}; user ID: ${userId}`);
 
-    return document;
+    return updatedDocument;
   }
 }

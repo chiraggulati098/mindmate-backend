@@ -1,7 +1,8 @@
-import { Controller, Post, Body, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Controller, Post, Body, UsePipes, ValidationPipe, Get, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -18,5 +19,11 @@ export class AuthController {
 	async login(@Body() body: LoginDto) {
 		const { email, password } = body;
 		return this.authService.login(email, password);
+	}
+
+	@Get('validate')
+	@UseGuards(JwtAuthGuard)
+	async validateToken() {
+		return { valid: true, message: 'Token is valid' };
 	}
 }

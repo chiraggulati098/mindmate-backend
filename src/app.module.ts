@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { DocumentsModule } from './documents/documents.module';
+import { S3Module } from './s3/s3.module';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { DocumentsModule } from './documents/documents.module';
       inject: [ConfigService],
     }),
     AuthModule, 
-    UsersModule, SubjectsModule, DocumentsModule
+    UsersModule, SubjectsModule, DocumentsModule, S3Module
   ],
   controllers: [AppController],
   providers: [AppService],

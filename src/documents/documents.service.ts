@@ -1,16 +1,18 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import { DocumentModel, DocumentDocument } from './schemas/document.schema';
+import { DocumentModel, DocumentDocument, DocumentType } from './schemas/document.schema';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { SubjectsService } from '../subjects/subjects.service';
+import { S3Service } from '../s3/s3.service';
 
 @Injectable()
 export class DocumentsService {
   constructor(
     @InjectModel(DocumentModel.name) private documentModel: Model<DocumentDocument>,
     private subjectsService: SubjectsService,
+    private s3Service: S3Service,
   ) {}
 
   async create(createDocumentDto: CreateDocumentDto, userId: string): Promise<DocumentModel> {
@@ -63,6 +65,17 @@ export class DocumentsService {
   }
 
   async remove(id: string, userId: string): Promise<void> {
+    const document = await this.findOne(id, userId);
+    
+    if (document.type === DocumentType.PDF && document.fileKey) {
+      try {
+        await this.s3Service.deleteFile(document.fileKey);
+      } catch (error) {
+        // log error but proceed with deletion
+        console.error('Failed to delete file from R2:', error);
+      }
+    }
+
     const result = await this.documentModel.deleteOne({ 
       _id: id, 
       userId: new Types.ObjectId(userId) 
@@ -82,5 +95,45 @@ export class DocumentsService {
       subjectId: new Types.ObjectId(subjectId),
       userId: new Types.ObjectId(userId)
     }).exec();
+  }
+
+  async attachPdf(documentId: string, file: Express.Multer.File, userId: string): Promise<DocumentModel> {
+    // First verify the document exists and belongs to the user
+    const document = await this.findOne(documentId, userId);
+
+    // Check if document already has a PDF attached
+    if (document.type === DocumentType.PDF && document.fileKey) {
+      // Delete the old PDF from R2
+      try {
+        await this.s3Service.deleteFile(document.fileKey);
+      } catch (error) {
+        console.error('Failed to delete old PDF:', error);
+      }
+    }
+
+    // Upload new file to R2
+    const { key, url } = await this.s3Service.uploadFile(file, userId);
+
+    // Update the document with PDF info
+    const updatedDocument = await this.documentModel
+      .findOneAndUpdate(
+        { _id: documentId, userId: new Types.ObjectId(userId) },
+        {
+          type: DocumentType.PDF,
+          fileUrl: url,
+          fileKey: key,
+          fileName: file.originalname,
+          fileSize: file.size,
+        },
+        { new: true }
+      )
+      .populate('subjectId')
+      .exec();
+
+    if (!updatedDocument) {
+      throw new NotFoundException('Document not found');
+    }
+    
+    return updatedDocument;
   }
 }

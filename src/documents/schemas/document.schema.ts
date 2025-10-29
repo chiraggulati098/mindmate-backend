@@ -20,7 +20,10 @@ export class DocumentModel {
   content?: string; // For text notes
 
   @Prop()
-  fileUrl?: string; // For PDFs - will store Cloudflare R2 URL later
+  fileUrl?: string; // For PDFs - Cloudflare R2 public URL
+
+  @Prop()
+  fileKey?: string; // S3/R2 object key for file operations
 
   @Prop()
   fileName?: string; // Original filename for PDFs

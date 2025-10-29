@@ -12,17 +12,14 @@ export class CreateDocumentDto {
   @IsString()
   content?: string; // Required for text notes, optional for PDFs
 
-  @ValidateIf(o => o.type === DocumentType.PDF)
   @IsString()
   @IsOptional()
   fileUrl?: string; // For PDFs - commented out for now, will add Cloudflare R2 later
 
-  @ValidateIf(o => o.type === DocumentType.PDF)
   @IsString()
   @IsOptional()
   fileName?: string;
 
-  @ValidateIf(o => o.type === DocumentType.PDF)
   @IsOptional()
   fileSize?: number;
 

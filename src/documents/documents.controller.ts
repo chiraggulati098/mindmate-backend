@@ -9,8 +9,12 @@ import {
   UseGuards, 
   Request,
   ValidationPipe,
-  UsePipes
+  UsePipes,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
@@ -40,5 +44,35 @@ export class DocumentsController {
   @Delete(':id')
   remove(@Param('id') id: string, @Request() req) {
     return this.documentsService.remove(id, req.user.sub);
+  }
+
+  @Get('subject/:subjectId')
+  findBySubject(@Param('subjectId') subjectId: string, @Request() req) {
+    return this.documentsService.findBySubject(subjectId, req.user.sub);
+  }
+
+  @Post(':id/attach-pdf')
+  @UseInterceptors(FileInterceptor('file', {
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB limit
+    },
+    fileFilter: (req, file, cb) => {
+      if (file.mimetype === 'application/pdf') {
+        cb(null, true);
+      } else {
+        cb(new BadRequestException('Only PDF files are allowed'), false);
+      }
+    },
+  }))
+  async attachPdf(
+    @Param('id') documentId: string,
+    @UploadedFile() file: Express.Multer.File,
+    @Request() req
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file provided');
+    }
+
+    return this.documentsService.attachPdf(documentId, file, req.user.sub);
   }
 }

@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { SubjectsModule } from './subjects/subjects.module';
 import { DocumentsModule } from './documents/documents.module';
 import { S3Module } from './s3/s3.module';
+import { RedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { S3Module } from './s3/s3.module';
       inject: [ConfigService],
     }),
     AuthModule, 
-    UsersModule, SubjectsModule, DocumentsModule, S3Module
+    UsersModule, SubjectsModule, DocumentsModule, S3Module, RedisModule
   ],
   controllers: [AppController],
   providers: [AppService],

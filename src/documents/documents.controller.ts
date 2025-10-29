@@ -75,4 +75,9 @@ export class DocumentsController {
 
     return this.documentsService.attachPdf(documentId, file, req.user.sub);
   }
+
+  @Get('process/:id')
+  processDocument(@Param('id') documentId: string, @Request() req) {
+    return this.documentsService.processDocument(documentId, req.user.sub);
+  }
 }

@@ -18,8 +18,7 @@ export class RedisService implements OnModuleDestroy {
       maxRetriesPerRequest: 3,
       enableReadyCheck: false,
       connectTimeout: 10000,
-      lazyConnect: true,
-      tls: {}, 
+      lazyConnect: true
     };
 
     this.client = new Redis(redisUrl, options);

@@ -6,6 +6,7 @@ import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { SubjectsService } from '../subjects/subjects.service';
 import { S3Service } from '../s3/s3.service';
+import { RedisService } from '../redis/redis.service';
 
 @Injectable()
 export class DocumentsService {
@@ -13,6 +14,7 @@ export class DocumentsService {
     @InjectModel(DocumentModel.name) private documentModel: Model<DocumentDocument>,
     private subjectsService: SubjectsService,
     private s3Service: S3Service,
+    private redisService: RedisService,
   ) {}
 
   async create(createDocumentDto: CreateDocumentDto, userId: string): Promise<DocumentModel> {
@@ -135,5 +137,18 @@ export class DocumentsService {
     }
     
     return updatedDocument;
+  }
+
+  async processDocument(documentId: string, userId: string): Promise<DocumentModel> {
+    const document = await this.findOne(documentId, userId);
+
+    // use enqueue method from RedisService to send processing request
+    await this.redisService.enqueue('process-pdf', {
+      documentId,
+      userId,
+    });
+    console.log(`Sent processing request to Redis Queue for document: ${documentId}; user ID: ${userId}`);
+
+    return document;
   }
 }

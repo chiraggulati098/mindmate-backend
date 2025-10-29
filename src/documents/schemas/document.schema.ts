@@ -59,10 +59,10 @@ export class DocumentModel {
   summary: string;
 
   @Prop({ default: '' })
-  flashcard: string;
+  flashcards: string;
 
   @Prop({ default: '' })
-  mcq: string;
+  mcqs: string;
 }
 
 export const DocumentSchema = SchemaFactory.createForClass(DocumentModel);
